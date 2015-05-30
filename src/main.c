@@ -66,10 +66,6 @@ struct _Application {
 #ifdef MAGIC_ENABLED
     magic_t magic_ctx;
 #endif
-
-#ifdef USE_MIMETYPES
-	sysmime_t *sysmime;
-#endif
 };
 
 // global variable, used by signals handlers
@@ -947,6 +943,10 @@ int main (int argc, char *argv[])
         magic_close(app->magic_ctx);
         return -1;
     }
+#endif
+
+#ifdef USE_MIMETYPES
+	mimetypes_load();
 #endif
 
     app->stat_srv = stat_srv_create (app);

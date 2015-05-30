@@ -9,7 +9,12 @@ This is pretty much vanilla RioFS, except for a few minor differences (which wil
 * The upstream developer doesn't believe in extension-based mime type sniffing (which is valid), however I'm using S3 for nothing but storing web-accessible files so need text/css, text/html instead of just text/plain or octet/stream
 
 **WARNING**  
-This is currently unstable and broken as I'm still in the process of developing it. It's considered "usable" when this warning disappears (which will probably be later this afternoon).
+
+* This is cowboy code. The "tests" I include (make -f Makefile.mimetest) centers solely around testing the MIME stuff.
+
+* The way it works is probably extremely unoptimized. That's a problem for future me.
+
+That being said, this has worked for me on XUbuntu 14.04, XUbuntu 15.04, and twice on different CentOS 6.6 boxes.
 
 ### Dependencies
 
@@ -39,7 +44,7 @@ To use /etc/mime.types instead of libmagic-based mime sniffing:
 ./autogen.sh
 ./configure --with-mimetypes --without-libmagic
 make
-sudo make isntall
+sudo make install
 ```
 
 **Note**  
