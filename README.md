@@ -2,6 +2,15 @@
 
 RioFS is an userspace filesystem for Amazon S3 buckets for servers that run on Linux and MacOSX. It supports versioned and non-versioned buckets in all AWS regions. RioFS development started at [Skoobe](https://www.skoobe.de) as a storage backend for legacy daemons which cannot talk natively to S3. It handles buckets with many thousands of keys and highly concurrent access gracefully.
 
+### Differences
+
+This is pretty much vanilla RioFS, except for a few minor differences (which will be added as I finish them):
+
+* The upstream developer doesn't believe in extension-based mime type sniffing (which is valid), however I'm using S3 for nothing but storing web-accessible files so need text/css, text/html instead of just text/plain or octet/stream
+
+**WARNING**  
+This is currently unstable and broken as I'm still in the process of developing it. It's considered "usable" when this warning disappears (which will probably be later this afternoon).
+
 ### Dependencies
 
 * glib >= 2.22
@@ -21,6 +30,20 @@ Find here installation guides for [Ubuntu](https://github.com/skoobe/riofs/wiki/
 make
 sudo make install
 ```
+
+#### Using /etc/mime.types
+
+To use /etc/mime.types instead of libmagic-based mime sniffing:
+
+```
+./autogen.sh
+./configure --with-mimetypes --without-libmagic
+make
+sudo make isntall
+```
+
+**Note**  
+For now libmagic must be explicitly disabled, when I get unlazy I'll make the two options mutually exclusive.
 
 ### Using
 

@@ -24,6 +24,9 @@
 #include "cache_mng.h"
 #include "stat_srv.h"
 #include "conf_keys.h"
+#ifdef USE_MIMETYPES
+#include "mimetypes.h"
+#endif
 
 /*{{{ struct */
 struct _Application {
@@ -62,6 +65,10 @@ struct _Application {
 
 #ifdef MAGIC_ENABLED
     magic_t magic_ctx;
+#endif
+
+#ifdef USE_MIMETYPES
+	sysmime_t *sysmime;
 #endif
 };
 
