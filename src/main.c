@@ -624,6 +624,7 @@ int main (int argc, char *argv[])
     GOptionContext *context;
     gchar **s_params = NULL;
     gchar **s_config = NULL;
+    gchar *s_key_prefix = NULL;
     gboolean foreground = FALSE;
     gchar conf_str[1023];
     struct stat st;
@@ -665,6 +666,7 @@ int main (int argc, char *argv[])
         { "force-head-requests", 0, 0, G_OPTION_ARG_NONE, &force_head_requests, "Flag. Send HEAD request for each file.", NULL },
         { "verbose", 'v', 0, G_OPTION_ARG_NONE, &verbose, "Verbose output.", NULL },
         { "version", 'V', 0, G_OPTION_ARG_NONE, &version, "Show application version and exit.", NULL },
+
         { NULL, 0, 0, G_OPTION_ARG_NONE, NULL, NULL, NULL }
     };
 
@@ -731,6 +733,7 @@ int main (int argc, char *argv[])
         g_fprintf (stdout, "RioFS File System v%s\n", VERSION);
         g_fprintf (stdout, "Copyright (C) 2012-2014 Paul Ionkin <paul.ionkin@gmail.com>\n");
         g_fprintf (stdout, "Copyright (C) 2012-2014 Skoobe GmbH. All rights reserved.\n");
+	g_fprintf (stdout, "Lots of useless stuff added by Jason Powell <jay@hatestheinternet.com>\n");
         g_fprintf (stdout, "Libraries:\n");
         g_fprintf (stdout, " GLib: %d.%d.%d   libevent: %s  fuse: %d.%d",
                 GLIB_MAJOR_VERSION, GLIB_MINOR_VERSION, GLIB_MICRO_VERSION,
@@ -879,7 +882,19 @@ int main (int argc, char *argv[])
     else
         conf_set_boolean (app->conf, "s3.force_head_requests_on_lookup", FALSE);
 
+    s_key_prefix = g_strstr_len(s_params[0],-1,":");
+    if( s_key_prefix != NULL ) {
+    	*s_key_prefix = 0;
+	s_key_prefix++;
+
+	conf_set_string(app->conf, "s3.key_prefix", s_key_prefix);
+    } else
+        conf_set_string(app->conf, "s3.key_prefix", "");
+
     conf_set_string (app->conf, "s3.bucket_name", s_params[0]);
+
+	g_printf("Bucket %s, key prefix %s\n",conf_get_string(app->conf,"s3.bucket_name"),conf_get_string(app->conf,"s3.key_prefix"));
+
     if (!application_set_url (app, conf_get_string (app->conf, "s3.endpoint"))) {
         application_destroy (app);
         return -1;

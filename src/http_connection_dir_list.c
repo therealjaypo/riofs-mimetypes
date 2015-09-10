@@ -44,6 +44,7 @@ static gboolean parse_dir_xml (DirListRequest *dir_list, const char *xml, size_t
     int i;
     xmlXPathObjectPtr key;
     xmlNodeSetPtr key_nodes;
+    gchar *key_prefix = (gchar *)conf_get_string(application_get_conf(dir_list->app),"s3.key_prefix");
 
 // checks value for NULL, continue if it fails
 #define XML_VAR_CHK(v) \
@@ -143,7 +144,15 @@ static gboolean parse_dir_xml (DirListRequest *dir_list, const char *xml, size_t
             continue;
         }
 
-        bname = strstr (name, dir_list->dir_path);
+	bname = name + strlen(key_prefix);
+
+	if( strlen(bname) == 0 ) {
+		LOG_debug (CON_DIR_LOG,"Skipping entry for the key prefix");
+		xmlFree(name);
+		continue;
+	}
+
+        bname = strstr (bname, dir_list->dir_path);
         bname = bname + strlen (dir_list->dir_path);
 
         if (strlen (bname) == 1 && bname[0] == '/')  {
@@ -198,7 +207,9 @@ static gboolean parse_dir_xml (DirListRequest *dir_list, const char *xml, size_t
         xmlXPathFreeObject (key);
         XML_VAR_CHK (name);
 
-        bname = strstr (name, dir_list->dir_path);
+	bname = name + strlen(key_prefix);
+
+        bname = strstr (bname, dir_list->dir_path);
         bname = bname + strlen (dir_list->dir_path);
 
         //XXX: remove trailing '/' characters
@@ -326,7 +337,7 @@ static void http_connection_on_directory_listing_data (HttpConnection *con, void
     }
 
     // execute HTTP request
-    req_path = g_strdup_printf ("/?delimiter=/&marker=%s&max-keys=%u&prefix=%s", next_marker, dir_req->max_keys, dir_req->dir_path);
+    req_path = g_strdup_printf ("/?delimiter=/&marker=%s&max-keys=%u&prefix=%s%s", next_marker, dir_req->max_keys, conf_get_string(application_get_conf(con->app),"s3.key_prefix"), dir_req->dir_path);
 
     xmlFree ((void *) next_marker);
 
@@ -352,6 +363,7 @@ void http_connection_get_directory_listing (HttpConnection *con, const gchar *di
     DirListRequest *dir_req;
     gchar *req_path;
     gboolean res;
+    gchar *key_prefix = (gchar *)conf_get_string(application_get_conf(con->app),"s3.key_prefix");
 
     LOG_debug (CON_DIR_LOG, INO_CON_H"Getting directory listing for: >>%s<<", INO_T (con), con, dir_path);
 
@@ -374,7 +386,7 @@ void http_connection_get_directory_listing (HttpConnection *con, const gchar *di
         dir_req->dir_path = g_strdup_printf ("%s/", dir_path);
     }
 
-    req_path = g_strdup_printf ("/?delimiter=/&max-keys=%u&prefix=%s", dir_req->max_keys, dir_req->dir_path);
+    req_path = g_strdup_printf ("/?delimiter=/&max-keys=%u&prefix=%s%s", dir_req->max_keys, key_prefix, dir_req->dir_path);
 
     res = http_connection_make_request (con,
         req_path, "GET",

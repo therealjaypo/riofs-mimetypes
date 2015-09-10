@@ -57,12 +57,13 @@ typedef struct {
 FileIO *fileio_create (Application *app, const gchar *fname, fuse_ino_t ino, gboolean assume_new)
 {
     FileIO *fop;
+    gchar *key_prefix = (gchar *)conf_get_string(application_get_conf(app),"s3.key_prefix");
 
     fop = g_new0 (FileIO, 1);
     fop->app = app;
     fop->current_size = 0;
     fop->write_buf = evbuffer_new ();
-    fop->fname = g_strdup_printf ("/%s", fname);
+    fop->fname = g_strdup_printf ("/%s%s", key_prefix, fname);
     fop->content_type = NULL;
     fop->file_size = 0;
     fop->head_req_sent = FALSE;
@@ -130,7 +131,7 @@ static void fileio_release_on_update_headers_con_cb (gpointer client, gpointer c
     unsigned char digest[16];
     gchar *md5str;
     size_t i;
-    char *maxage;
+    gchar *maxage;
 
     LOG_debug (FIO_LOG, INO_CON_H"Updating object's headers..", INO_T (fop->ino), con);
 
@@ -141,7 +142,7 @@ static void fileio_release_on_update_headers_con_cb (gpointer client, gpointer c
     http_connection_add_output_header (con, "x-amz-metadata-directive", "REPLACE");
     http_connection_add_output_header (con, "x-amz-storage-class", conf_get_string (application_get_conf (con->app), "s3.storage_type"));
 
-    maxage = conf_get_string(application_get_conf(con->app),"s3.cache_control");
+    maxage = (gchar *)conf_get_string(application_get_conf(con->app),"s3.cache_control");
     if( maxage != NULL && strlen(maxage) > 0 ) {
     	 http_connection_add_output_header (con, "Cache-Control", maxage);
     }
@@ -368,7 +369,7 @@ static void fileio_release_on_part_con_cb (gpointer client, gpointer ctx)
 #endif
 
 #ifdef USE_MIMETYPES
-	gchar *mime_type = mimetypes_find(path);
+	gchar *mime_type = (gchar *)mimetypes_find(path);
 	if( mime_type ) {
 		LOG_debug(FIO_LOG,"mime.types says %s is %s",path,mime_type);
 		fop->content_type = strdup(mime_type);
@@ -1105,11 +1106,15 @@ static void fileio_simple_upload_on_con_cb (gpointer client, gpointer ctx)
 void fileio_simple_upload (Application *app, const gchar *fname, const char *str, mode_t mode, FileIO_simple_on_upload_cb on_upload_cb, gpointer ctx)
 {
     FileIOSimpleUpload *fsim;
+    gchar *key_prefix;
 
     fsim = g_new0 (FileIOSimpleUpload, 1);
     fsim->write_buf = evbuffer_new ();
     evbuffer_add (fsim->write_buf, str, strlen (str));
-    fsim->fname = g_strdup_printf ("/%s", fname);
+
+    key_prefix = (gchar *)conf_get_string(application_get_conf(app),"s3.key_prefix");
+    fsim->fname = g_strdup_printf("/%s%s",key_prefix,fname);
+
     fsim->on_upload_cb = on_upload_cb;
     fsim->ctx = ctx;
     fsim->mode = mode;
@@ -1179,11 +1184,13 @@ static void fileio_simple_download_on_con_cb (gpointer client, gpointer ctx)
 void fileio_simple_download (Application *app, const gchar *fname, FileIO_simple_on_download_cb on_download_cb, gpointer ctx)
 {
     FileIOSimpleDownload *fsim;
+    gchar *key_prefix = (gchar *)conf_get_string(application_get_conf(app),"s3.key_prefix");
 
     fsim = g_new0 (FileIOSimpleDownload, 1);
     fsim->ctx = ctx;
     fsim->on_download_cb = on_download_cb;
-    fsim->fname = g_strdup_printf ("/%s", fname);
+
+    fsim->fname = g_strdup_printf("/%s%s",key_prefix,fname);
 
     if (!client_pool_get_client (application_get_read_client_pool (app),
         fileio_simple_download_on_con_cb, fsim)) {
