@@ -806,6 +806,7 @@ static void dir_tree_on_lookup_con_cb (gpointer client, gpointer ctx)
     gchar *req_path = NULL;
     gboolean res;
     DirEntry  *en;
+    gchar *key_prefix = (gchar *)conf_get_string(application_get_conf(con->app),"s3.key_prefix");
 
     en = g_hash_table_lookup (op_data->dtree->h_inodes, GUINT_TO_POINTER (op_data->ino));
     // entry not found
@@ -818,7 +819,7 @@ static void dir_tree_on_lookup_con_cb (gpointer client, gpointer ctx)
 
     http_connection_acquire (con);
 
-    req_path = g_strdup_printf ("/%s", en->fullpath);
+    req_path = g_strdup_printf ("/%s%s", key_prefix, en->fullpath);
 
     res = http_connection_make_request (con,
         req_path, "HEAD", NULL, FALSE, NULL,
