@@ -1559,6 +1559,7 @@ static void dir_tree_file_remove_on_con_cb (gpointer client, gpointer ctx)
     gchar *req_path;
     gboolean res;
     DirEntry *en;
+    gchar *key_prefix = (gchar *)conf_get_string(application_get_conf(con->app),"s3.key_prefix");
 
     en = g_hash_table_lookup (data->dtree->h_inodes, GUINT_TO_POINTER (data->ino));
     if (!en) {
@@ -1571,7 +1572,8 @@ static void dir_tree_file_remove_on_con_cb (gpointer client, gpointer ctx)
 
     http_connection_acquire (con);
 
-    req_path = g_strdup_printf ("/%s", en->fullpath);
+
+    req_path = g_strdup_printf ("/%s%s", key_prefix, en->fullpath);
     res = http_connection_make_request (con,
         req_path, "DELETE",
         NULL, TRUE, NULL,
@@ -1857,6 +1859,7 @@ static void dir_tree_on_rename_delete_con_cb (gpointer client, gpointer ctx)
     gboolean res;
     DirEntry *en;
     DirEntry *parent_en;
+    gchar *key_prefix = (gchar *)conf_get_string(application_get_conf(con->app),"s3.key_prefix");
 
     parent_en = g_hash_table_lookup (rdata->dtree->h_inodes, GUINT_TO_POINTER (rdata->parent_ino));
     if (!parent_en || parent_en->type != DET_dir) {
